@@ -200,12 +200,14 @@ export default function GameScreen() {
       setWin('ODD')
       setWinX(2)
     }
-    if (bet == 'RED') {
-      setWin('RED')
-      setWinX(2)
-    } else if (bet == 'BLACK' && rand == 'BLACK') {
-      setWin('BLACK')
-      setWinX(2)
+    if (rand > 0) {
+      if (bet == 'RED' && cells[rand - 1].color == 'red') {
+        setWin('RED')
+        setWinX(2)
+      } else if (bet == 'BLACK' && cells[rand - 1].color == 'black') {
+        setWin('BLACK')
+        setWinX(2)
+      }
     }
   }
 

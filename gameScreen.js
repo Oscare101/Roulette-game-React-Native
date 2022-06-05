@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   ToastAndroid,
+  ScrollView,
 } from 'react-native'
 import { styleProps } from 'react-native-web/dist/cjs/modules/forwardedProps'
 
@@ -51,14 +52,14 @@ const cells = [
   { id: 36, color: 'red' },
 ]
 
-const cellsThird = [{ id: '1st 12' }, { id: '2st 12' }, { id: '3st 12' }]
+const cellsThird = [{ id: '1st 12' }, { id: '2nd 12' }, { id: '3rd 12' }]
 const cellsHalf = [
   { id: '1st 18' },
   { id: 'EVEN' },
   { id: 'RED' },
   { id: 'BLACK' },
   { id: 'ODD' },
-  { id: '2st 18' },
+  { id: '2nd 18' },
 ]
 export default function GameScreen() {
   const [bet, setBet] = useState('')
@@ -69,7 +70,11 @@ export default function GameScreen() {
   const [randRange18, setRandRange18] = useState('')
   const [randParity, setRandParity] = useState('')
   const [win, setWin] = useState('')
-  const [winX, setWinX] = useState('')
+  const [inputCoin, setInputCoin] = useState(0)
+  const [outputCoin, setoutputCoin] = useState(0)
+  const [wonCoin, setWonCoin] = useState(0)
+  const [cash, setCash] = useState(1000)
+  const [lastGames, setLastGames] = useState([])
 
   function renderCells({ item }) {
     return (
@@ -135,11 +140,47 @@ export default function GameScreen() {
     )
   }
 
+  function renderLastGames({ item }) {
+    return (
+      <View
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: 100,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: item == '0' ? '#399802' : cells[+item - 1].color,
+          margin: 1,
+          elevation: 3,
+        }}
+      >
+        <Text
+          style={[
+            {
+              color:
+                item == '0'
+                  ? '#000'
+                  : cells[+item - 1].color == 'black'
+                  ? '#fff'
+                  : '#000',
+            },
+          ]}
+        >
+          {item}
+        </Text>
+      </View>
+    )
+  }
+
   function startGame() {
     let rand
-    if (bet || +bet == 0) {
+    if (bet != '' && +inputCoin != 0) {
+      let winX = 0
+      let betGot = +inputCoin
+
+      setInputCoin(0)
+      setoutputCoin(betGot)
       rand = Math.floor(Math.random() * (36 - 0 + 1) + 0)
-      console.log(rand)
       setRandBet(rand)
       if (+rand == 0) {
         setRandColor('#399802')
@@ -147,204 +188,366 @@ export default function GameScreen() {
         setRandColor(cells[rand - 1].color)
       }
       if (+rand <= 18) {
-        setRandRange18(1)
+        setRandRange18('1st 18')
       } else {
-        setRandRange18(2)
+        setRandRange18('2nd 18')
       }
       if (+rand >= 1 && +rand <= 12) {
-        setRandRange12(1)
+        setRandRange12('1st 12')
       } else if (+rand > 24) {
-        setRandRange12(3)
+        setRandRange12('3rd 12')
       } else {
-        setRandRange12(2)
+        setRandRange12('2nd 12')
       }
       if (+rand % 2 == 0) {
         setRandParity('EVEN')
       } else {
         setRandParity('ODD')
       }
+
+      setLastGames((LastGames) => [...LastGames, rand])
+      setWin('')
+      winX = 0
+      if (+bet >= 0 && +bet <= 36) {
+        if (+rand == +bet) {
+          setWin(bet)
+          winX = 36
+        }
+      }
+      if (bet == '1st 12' && +rand >= 1 && +rand <= 12) {
+        setWin('1st 12')
+        winX = 3
+      } else if (bet == '2nd 12' && +rand >= 13 && +rand <= 24) {
+        setWin('2nd 12')
+        winX = 3
+      } else if (bet == '3rd 12' && +rand >= 25 && +rand <= 36) {
+        setWin('3rd 12')
+        winX = 3
+      }
+      if (bet == '1st 18' && +rand >= 1 && +rand <= 18) {
+        setWin('1st 18')
+        winX = 2
+      } else if (bet == '2nd 18' && +rand >= 19 && +rand <= 36) {
+        setWin('2nd 18')
+        winX = 2
+      }
+      if (bet == 'EVEN' && rand % 2 == 0) {
+        setWin('EVEN')
+        winX = 2
+      } else if (bet == 'ODD' && rand % 2 != 0) {
+        setWin('ODD')
+        winX = 2
+      }
+      if (rand > 0) {
+        if (bet == 'RED' && cells[rand - 1].color == 'red') {
+          setWin('RED')
+          winX = 2
+        } else if (bet == 'BLACK' && cells[rand - 1].color == 'black') {
+          setWin('BLACK')
+          winX = 2
+        }
+      }
+      if (+winX != 0) {
+        setWonCoin(+betGot * +winX)
+        setCash(cash - +betGot + +betGot * +winX)
+      } else {
+        setCash(cash - betGot)
+      }
     } else {
       ToastAndroid.show('Make your bet!', ToastAndroid.SHORT)
-    }
-
-    setWin('')
-    setWinX('')
-    if (+bet >= 0 && +bet <= 36) {
-      if (+rand == +bet) {
-        setWin(bet)
-        setWinX(36)
-      }
-    }
-    if (bet == '1st 12' && +rand >= 1 && +rand <= 12) {
-      console.log('qwertyuiop')
-      setWin('1st 12')
-      setWinX(3)
-    } else if (bet == '2st 12' && +rand >= 13 && +rand <= 24) {
-      setWin('2st 12')
-      setWinX(3)
-    } else if (bet == '3st 12' && +rand >= 25 && +rand <= 36) {
-      setWin('3st 12')
-      setWinX(3)
-    }
-    if (bet == '1st 18' && +rand >= 1 && +rand <= 18) {
-      setWin('1st 18')
-      setWinX(2)
-    } else if (bet == '2st 18' && +rand >= 19 && +rand <= 36) {
-      setWin('2st 18')
-      setWinX(2)
-    }
-    if (bet == 'EVEN' && rand % 2 == 0) {
-      setWin('EVEN')
-      setWinX(2)
-    } else if (bet == 'ODD' && rand % 2 != 0) {
-      setWin('ODD')
-      setWinX(2)
-    }
-    if (rand > 0) {
-      if (bet == 'RED' && cells[rand - 1].color == 'red') {
-        setWin('RED')
-        setWinX(2)
-      } else if (bet == 'BLACK' && cells[rand - 1].color == 'black') {
-        setWin('BLACK')
-        setWinX(2)
-      }
     }
   }
 
   return (
     <View style={styles.container}>
-      <Text>{win}</Text>
-      <View style={styles.header}>
-        <View style={[styles.outputBet, { backgroundColor: betColor }]}>
+      <View style={{ flexDirection: 'row' }}>
+        <View style={{ flexDirection: 'column' }}>
           <Text
             style={{
-              fontSize: 16,
-              color: betColor == 'black' ? '#fff' : '#000',
-            }}
-          >
-            Your bet:
-          </Text>
-          <Text
-            style={[
-              styles.outputBetText,
-              { color: betColor == 'black' ? '#fff' : '#000' },
-            ]}
-          >
-            - {bet} -
-          </Text>
-        </View>
-        <View style={styles.random}>
-          <View
-            style={{
-              width: '50%',
-              height: '100%',
-              backgroundColor: randColor,
+              fontSize: 14,
               alignItems: 'center',
               justifyContent: 'center',
+              textAlign: 'center',
+              width: width * 0.35,
             }}
           >
+            Your last bet was:
+          </Text>
+          <Text
+            style={{
+              fontSize: 25,
+              color: '#50000D',
+              fontWeight: 'bold',
+              textAlign: 'center',
+            }}
+          >
+            {outputCoin}
+          </Text>
+        </View>
+        <View style={{ flexDirection: 'column' }}>
+          <Text
+            style={{
+              fontSize: 14,
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: width * 0.35,
+              textAlign: 'center',
+            }}
+          >
+            You won:
+          </Text>
+          <Text
+            style={{
+              fontSize: 25,
+              color: '#D99B24',
+              fontWeight: 'bold',
+              textAlign: 'center',
+            }}
+          >
+            {wonCoin}
+          </Text>
+        </View>
+        <View style={styles.cashBlock}>
+          <Text>Cash:</Text>
+          <Text>{cash}</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row' }}>
+        <View style={styles.header}>
+          <View style={[styles.outputBet, { backgroundColor: betColor }]}>
             <Text
               style={{
-                color: randColor == 'black' ? '#fff' : '#000',
-                fontSize: 50,
+                fontSize: 16,
+                color: betColor == 'black' ? '#fff' : '#000',
               }}
             >
-              {randBet}
+              Your bet:
+            </Text>
+            <Text
+              style={[
+                styles.outputBetText,
+                { color: betColor == 'black' ? '#fff' : '#000' },
+              ]}
+            >
+              - {bet} -
             </Text>
           </View>
-          <View style={{ width: '50%' }}>
-            <View style={[styles.small, { backgroundColor: randColor }]}>
+          <View style={styles.random}>
+            <View
+              style={{
+                width: '50%',
+                height: '100%',
+                backgroundColor: randColor,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
               <Text
                 style={{
-                  fontSize: 14,
+                  color: randColor == 'black' ? '#fff' : '#000',
+                  fontSize: 40,
+                }}
+              >
+                {randBet}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 12,
                   color: randColor == 'black' ? '#fff' : '#000',
                 }}
               >
                 {randColor.toUpperCase()}
               </Text>
             </View>
-            <View style={[styles.small, { backgroundColor: '#30000F' }]}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: '#fff',
-                }}
-              >
-                {randParity}
-              </Text>
-            </View>
-            <View style={[styles.small, { backgroundColor: '#9B440F' }]}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: '#fff',
-                }}
-              >
-                {randRange12}st 12
-              </Text>
-            </View>
-            <View style={[styles.small, { backgroundColor: '#0D4D87' }]}>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: '#fff',
-                }}
-              >
-                {randRange18}st 18
-              </Text>
+            <View style={{ width: '50%' }}>
+              <View style={[styles.small, { backgroundColor: '#30000F' }]}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: '#fff',
+                  }}
+                >
+                  {randParity}
+                </Text>
+              </View>
+              <View style={[styles.small, { backgroundColor: '#9B440F' }]}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: '#fff',
+                  }}
+                >
+                  {randRange12}
+                </Text>
+              </View>
+              <View style={[styles.small, { backgroundColor: '#0D4D87' }]}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: '#fff',
+                  }}
+                >
+                  {randRange18}
+                </Text>
+              </View>
             </View>
           </View>
+        </View>
+        <View style={styles.bet}>
+          <Text>Your bet:</Text>
+          <Text style={styles.betText}>{inputCoin}</Text>
         </View>
       </View>
 
-      <View style={styles.table}>
-        <TouchableOpacity
-          onPress={() => {
-            setBet(0)
-            setBetColor('#399802')
-          }}
-        >
-          <View
-            style={[
-              styles.tableHorisont,
-              { borderTopRightRadius: 100, borderTopLeftRadius: 100 },
-            ]}
+      <View style={{ flexDirection: 'row' }}>
+        <View style={styles.table}>
+          <TouchableOpacity
+            onPress={() => {
+              setBet(0)
+              setBetColor('#399802')
+            }}
           >
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>
-              0
-            </Text>
-          </View>
-        </TouchableOpacity>
-        <View style={{ flexDirection: 'row' }}>
-          <FlatList
-            numColumns={3}
-            data={cells}
-            renderItem={renderCells}
-            keyExtractor={(item) => item.id}
-          />
-          <FlatList
-            numColumns={1}
-            data={cellsThird}
-            renderItem={renderCellsThird}
-            keyExtractor={(item) => item.id}
-          />
+            <View
+              style={[
+                styles.tableHorisont,
+                { borderTopRightRadius: 100, borderTopLeftRadius: 100 },
+              ]}
+            >
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#fff' }}>
+                0
+              </Text>
+            </View>
+          </TouchableOpacity>
+          <View style={{ flexDirection: 'row' }}>
+            <FlatList
+              numColumns={3}
+              data={cells}
+              renderItem={renderCells}
+              keyExtractor={(item) => item.id}
+            />
+            <FlatList
+              numColumns={1}
+              data={cellsThird}
+              renderItem={renderCellsThird}
+              keyExtractor={(item) => item.id}
+            />
 
-          <FlatList
-            numColumns={1}
-            data={cellsHalf}
-            renderItem={renderCellsHalf}
-            keyExtractor={(item) => item.id}
-          />
-        </View>
-        <TouchableOpacity
-          onPress={() => {
-            startGame()
-          }}
-        >
-          <View style={styles.game}>
-            <Text style={styles.gameText}>Game</Text>
+            <FlatList
+              numColumns={1}
+              data={cellsHalf}
+              renderItem={renderCellsHalf}
+              keyExtractor={(item) => item.id}
+            />
           </View>
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              startGame()
+            }}
+          >
+            <View style={styles.game}>
+              <Text style={styles.gameText}>Game</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.coinBlock}>
+          <TouchableOpacity
+            onPress={() => {
+              if (inputCoin + 50 <= +cash) {
+                let i = inputCoin + 50
+                setInputCoin(i)
+              } else {
+                ToastAndroid.show(
+                  'You don`t have enough cash!',
+                  ToastAndroid.SHORT
+                )
+              }
+            }}
+          >
+            <View style={[styles.coin, { borderColor: '#703495' }]}>
+              <Text style={styles.coinText}>50</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (inputCoin + 25 <= +cash) {
+                let i = inputCoin + 25
+                setInputCoin(i)
+              } else {
+                ToastAndroid.show(
+                  'You don`t have enough cash!',
+                  ToastAndroid.SHORT
+                )
+              }
+            }}
+          >
+            <View style={[styles.coin, { borderColor: '#C6881A' }]}>
+              <Text style={styles.coinText}>25</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (inputCoin + 5 <= +cash) {
+                let i = inputCoin + 5
+                setInputCoin(i)
+              } else {
+                ToastAndroid.show(
+                  'You don`t have enough cash!',
+                  ToastAndroid.SHORT
+                )
+              }
+            }}
+          >
+            <View style={[styles.coin, { borderColor: '#770523' }]}>
+              <Text style={styles.coinText}>5</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (inputCoin + 1 <= +cash) {
+                let i = inputCoin + 1
+                setInputCoin(i)
+              } else {
+                ToastAndroid.show(
+                  'You don`t have enough cash!',
+                  ToastAndroid.SHORT
+                )
+              }
+            }}
+          >
+            <View style={[styles.coin, { borderColor: '#16608A' }]}>
+              <Text style={styles.coinText}>1</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              let i = 0
+              setInputCoin(i)
+            }}
+          >
+            <View style={styles.clear}>
+              <Text style={styles.clearText}>Clear</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </View>
+      <View
+        style={{
+          width: width * 0.95,
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+        }}
+      >
+        <Text>Last games:</Text>
+        <FlatList
+          horizontal={true}
+          numColumns={1}
+          data={lastGames}
+          renderItem={renderLastGames}
+          keyExtractor={() => Math.random()}
+        />
+        {/* <ScrollView>
+          {lastGames.map((item) => renderLastGames(item))}
+        </ScrollView> */}
       </View>
     </View>
   )
@@ -359,9 +562,19 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    width: width * 0.8,
-    height: 80,
+    width: width * 0.7,
+    height: 70,
     justifyContent: 'space-between',
+  },
+  cashBlock: {
+    width: width * 0.2,
+    height: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#FCE561',
+    borderStyle: 'solid',
+    borderRadius: 20,
   },
   random: {
     width: '50%',
@@ -371,20 +584,34 @@ const styles = StyleSheet.create({
 
     alignItems: 'center',
     borderTopEndRadius: 20,
+    borderBottomEndRadius: 20,
     borderWidth: 1,
     borderColor: '#000',
     borderStyle: 'solid',
   },
   small: {
     width: '100%',
-    height: '25%',
+    height: '33.33%',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  bet: {
+    borderRadius: 20,
+    backgroundColor: '#FCE561',
+    width: width * 0.2,
+    height: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  betText: {
+    fontSize: 40,
+    color: '#320500',
+  },
   table: {
-    width: width * 0.95,
+    width: width * 0.7,
   },
   tableHorisont: {
+    width: '100%',
     height: 34,
     alignItems: 'center',
     justifyContent: 'center',
@@ -394,8 +621,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   tableCell: {
-    width: (width * 0.96) / 5,
-    height: 34,
+    width: (width * 0.7) / 5 - 2,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -409,6 +636,7 @@ const styles = StyleSheet.create({
 
     alignItems: 'center',
     borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
     borderWidth: 1,
     borderColor: '#000',
     borderStyle: 'solid',
@@ -418,8 +646,8 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   cellThird: {
-    width: (width * 0.9) / 5,
-    height: 36 * 4,
+    width: (width * 0.7) / 5,
+    height: 34 * 4,
     borderWidth: 1,
     borderColor: '#fff',
     borderStyle: 'solid',
@@ -433,8 +661,8 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '90deg' }],
   },
   cellHalf: {
-    width: (width * 0.9) / 5,
-    height: 18 * 4,
+    width: (width * 0.7) / 5,
+    height: 17 * 4,
     borderWidth: 1,
     borderColor: '#fff',
     borderStyle: 'solid',
@@ -443,7 +671,7 @@ const styles = StyleSheet.create({
   },
   cellHalfText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     transform: [{ rotate: '90deg' }],
   },
@@ -451,7 +679,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDA402',
     height: 40,
     paddingHorizontal: 20,
-    width: width * 0.95,
+    width: '100%',
     borderBottomEndRadius: 100,
     borderBottomStartRadius: 100,
     alignItems: 'center',
@@ -464,5 +692,37 @@ const styles = StyleSheet.create({
   gameText: {
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  coinBlock: {
+    width: width * 0.2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  coin: {
+    borderRadius: 100,
+    width: 70,
+    height: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3.13,
+    borderStyle: 'dashed',
+    backgroundColor: '#fff',
+    margin: 5,
+  },
+  coinText: {
+    fontSize: 40,
+    fontWeight: 'bold',
+  },
+  clear: {
+    width: 70,
+    height: 40,
+    backgroundColor: '#000',
+    borderRadius: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  clearText: {
+    fontSize: 20,
+    color: '#fff',
   },
 })
